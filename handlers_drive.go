@@ -115,18 +115,19 @@ func uploadHandler(ctx cli.Context) {
 	args := ctx.Args()
 	checkUploadArgs(args)
 	err := newDrive(args).Upload(drive.UploadArgs{
-		Out:         os.Stdout,
-		Progress:    progressWriter(args.Bool("noProgress")),
-		Path:        args.String("path"),
-		Name:        args.String("name"),
-		Description: args.String("description"),
-		Parents:     args.StringSlice("parent"),
-		Mime:        args.String("mime"),
-		Recursive:   args.Bool("recursive"),
-		Share:       args.Bool("share"),
-		Delete:      args.Bool("delete"),
-		ChunkSize:   args.Int64("chunksize"),
-		Timeout:     durationInSeconds(args.Int64("timeout")),
+		Out:            os.Stdout,
+		Progress:       progressWriter(args.Bool("noProgress")),
+		Path:           args.String("path"),
+		Name:           args.String("name"),
+		Description:    args.String("description"),
+		Parents:        args.StringSlice("parent"),
+		Mime:           args.String("mime"),
+		Recursive:      args.Bool("recursive"),
+		Share:          args.Bool("share"),
+		Delete:         args.Bool("delete"),
+		ChunkSize:      args.Int64("chunksize"),
+		Ignorefiletime: args.Int64("ignorefiletime"),
+		Timeout:        durationInSeconds(args.Int64("timeout")),
 	})
 	checkErr(err)
 }

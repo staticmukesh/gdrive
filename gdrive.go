@@ -16,6 +16,7 @@ const DefaultNameWidth = 40
 const DefaultPathWidth = 60
 const DefaultUploadChunkSize = 8 * 1024 * 1024
 const DefaultTimeout = 5 * 60
+const DefaultIgnoreFileTime = 0
 const DefaultQuery = "trashed = false and 'me' in owners"
 const DefaultShareRole = "reader"
 const DefaultShareType = "anyone"
@@ -257,6 +258,12 @@ func main() {
 						Patterns:     []string{"--chunksize"},
 						Description:  fmt.Sprintf("Set chunk size in bytes, default: %d", DefaultUploadChunkSize),
 						DefaultValue: DefaultUploadChunkSize,
+					},
+					cli.IntFlag{
+						Name:         "ignorefiletime",
+						Patterns:     []string{"--ignorefiletime"},
+						Description:  fmt.Sprintf("Set ignore file time in minutes , default: %d", DefaultIgnoreFileTime),
+						DefaultValue: DefaultIgnoreFileTime,
 					},
 				),
 			},

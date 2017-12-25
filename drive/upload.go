@@ -2,28 +2,30 @@ package drive
 
 import (
 	"fmt"
-	"google.golang.org/api/drive/v3"
-	"google.golang.org/api/googleapi"
 	"io"
 	"mime"
 	"os"
 	"path/filepath"
 	"time"
+
+	drive "google.golang.org/api/drive/v3"
+	"google.golang.org/api/googleapi"
 )
 
 type UploadArgs struct {
-	Out         io.Writer
-	Progress    io.Writer
-	Path        string
-	Name        string
-	Description string
-	Parents     []string
-	Mime        string
-	Recursive   bool
-	Share       bool
-	Delete      bool
-	ChunkSize   int64
-	Timeout     time.Duration
+	Out            io.Writer
+	Progress       io.Writer
+	Path           string
+	Name           string
+	Description    string
+	Parents        []string
+	Mime           string
+	Recursive      bool
+	Share          bool
+	Delete         bool
+	ChunkSize      int64
+	Timeout        time.Duration
+	Ignorefiletime int64
 }
 
 func (self *Drive) Upload(args UploadArgs) error {
@@ -100,7 +102,7 @@ func (self *Drive) uploadRecursive(args UploadArgs) error {
 }
 
 func (self *Drive) uploadDirectory(args UploadArgs) error {
-	srcFile, srcFileInfo, err := openFile(args.Path)
+	srcFile, _, err := openFile(args.Path)
 	if err != nil {
 		return err
 	}
@@ -108,17 +110,17 @@ func (self *Drive) uploadDirectory(args UploadArgs) error {
 	// Close file on function exit
 	defer srcFile.Close()
 
-	fmt.Fprintf(args.Out, "Creating directory %s\n", srcFileInfo.Name())
-	// Make directory on drive
-	f, err := self.mkdir(MkdirArgs{
-		Out:         args.Out,
-		Name:        srcFileInfo.Name(),
-		Parents:     args.Parents,
-		Description: args.Description,
-	})
-	if err != nil {
-		return err
-	}
+	// fmt.Fprintf(args.Out, "Creating directory %s\n", srcFileInfo.Name())
+	// // Make directory on drive
+	// f, err := self.mkdir(MkdirArgs{
+	// 	Out:         args.Out,
+	// 	Name:        srcFileInfo.Name(),
+	// 	Parents:     args.Parents,
+	// 	Description: args.Description,
+	// })
+	// if err != nil {
+	// 	return err
+	// }
 
 	// Read files from directory
 	names, err := srcFile.Readdirnames(0)
@@ -130,7 +132,7 @@ func (self *Drive) uploadDirectory(args UploadArgs) error {
 		// Copy args and set new path and parents
 		newArgs := args
 		newArgs.Path = filepath.Join(args.Path, name)
-		newArgs.Parents = []string{f.Id}
+		newArgs.Parents = args.Parents
 		newArgs.Description = ""
 
 		// Upload
@@ -151,6 +153,17 @@ func (self *Drive) uploadFile(args UploadArgs) (*drive.File, int64, error) {
 
 	// Close file on function exit
 	defer srcFile.Close()
+
+	if args.Ignorefiletime != 0 {
+		modTime := srcFileInfo.ModTime()
+		timeNow := time.Now()
+
+		diff := int64(timeNow.Sub(modTime).Minutes())
+		if diff < args.Ignorefiletime {
+			// fmt.Printf("File is too new to upload %v\n", srcFile.Name())
+			return &drive.File{Description: args.Description}, 0, nil
+		}
+	}
 
 	// Instantiate empty drive file
 	dstFile := &drive.File{Description: args.Description}
